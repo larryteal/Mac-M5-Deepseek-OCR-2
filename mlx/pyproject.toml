@@ -1,0 +1,9 @@
+[project]
+name = "deepseek-ocr2-mlx"
+version = "0.1.0"
+description = "DeepSeek-OCR-2 on Mac using MLX (Full Metal GPU acceleration)"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mlx-vlm>=0.4.0",
+]

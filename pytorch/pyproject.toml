@@ -1,0 +1,16 @@
+[project]
+name = "deepseek-ocr2-pytorch"
+version = "0.1.0"
+description = "DeepSeek-OCR-2 on Mac using PyTorch (Hybrid CPU + MPS)"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.13.0",
+    "addict>=2.4.0",
+    "easydict>=1.13",
+    "einops>=0.8.2",
+    "pillow>=12.1.1",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+    "transformers==4.46.3",
+]
