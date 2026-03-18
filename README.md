@@ -34,6 +34,7 @@ The MLX solution runs **entirely on GPU** via Apple's native MLX framework, achi
 | PyTorch Hybrid (fp32) | 10.10s | CPU + MPS | 6x |
 | PyTorch Hybrid (fp16 LLM) | 6.94s | CPU + MPS | 9x |
 | **MLX bf16 (full GPU)** | **1.09s** | **Metal GPU** | **55x** |
+| Ollama (Q8_0, new engine) | ~45s | Metal GPU (ggml) | ~1.3x |
 
 ## Solution 1: MLX (Full GPU) - Recommended
 
@@ -185,6 +186,13 @@ Here's a timeline of what we tried, for anyone going down the same path:
 - Full Metal GPU acceleration through Apple's native MLX framework
 - **Result**: Correct output, **~1s** per image - **the winner**
 
+### Attempt 8: Ollama (Native ggml/Metal)
+- Implement `deepseekocr2` as a new model architecture in Ollama's Go codebase
+- Convert HuggingFace safetensors → GGUF, run via Ollama's new engine
+- Overcame multiple issues: Metal crashes (cross-context tensors, inconsistent graph shapes), wrong RoPE type causing hallucinated output, hybrid attention mask orientation
+- **Result**: Correct output, **~45s** per image - slower than MLX but integrates with Ollama ecosystem
+- See [`ollama/OLLAMA.md`](ollama/OLLAMA.md) for full implementation details and pitfalls
+
 ---
 
 ## File Structure
@@ -194,6 +202,7 @@ Here's a timeline of what we tried, for anyone going down the same path:
 ├── README.md
 ├── mlx/
 │   ├── ocr.py                    # MLX solution (recommended)
+│   ├── ocr_server.py             # HTTP server for batch OCR
 │   └── pyproject.toml
 ├── pytorch/
 │   ├── ocr_cpu.py                # CPU-only fallback
@@ -202,6 +211,17 @@ Here's a timeline of what we tried, for anyone going down the same path:
 │   ├── patches/
 │   │   └── PATCHING.md           # What patches are needed and why
 │   └── pyproject.toml
+├── ollama/
+│   ├── OLLAMA.md                 # Implementation guide and pitfalls
+│   ├── Modelfile                 # Ollama model template
+│   ├── model/deepseekocr2/       # Ollama model implementation (Go)
+│   │   ├── model.go              # Main model, EncodeMultimodal, Forward
+│   │   ├── model_qwen2.go        # Qwen2 vision encoder
+│   │   ├── model_sam.go          # SAM ViT-B encoder
+│   │   ├── model_text.go         # DeepSeek MoE text decoder
+│   │   └── imageprocessor.go     # Image preprocessing
+│   └── convert/
+│       └── convert_deepseekocr2.go  # HuggingFace → GGUF converter
 └── sample.png                    # Sample test image
 ```
 
@@ -214,3 +234,4 @@ MIT
 - [DeepSeek-AI](https://github.com/deepseek-ai) for DeepSeek-OCR-2
 - [mlx-vlm](https://github.com/Blaizzy/mlx-vlm) for MLX model support
 - [mlx-community](https://huggingface.co/mlx-community) for pre-converted MLX models
+- [Ollama](https://github.com/ollama/ollama) for the inference engine and model framework

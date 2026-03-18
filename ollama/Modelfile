@@ -1,0 +1,20 @@
+# Modelfile for DeepSeek-OCR-2 on Ollama
+#
+# Prerequisites:
+#   1. Build Ollama from source with deepseekocr2 model support (see OLLAMA.md)
+#   2. Convert model to GGUF: ollama create deepseek-ocr2 -q Q8_0 https://huggingface.co/deepseek-ai/DeepSeek-OCR-2
+#
+# Create model:
+#   ollama create deepseek-ocr2 -f Modelfile
+#
+# Usage:
+#   ollama run deepseek-ocr2 "Free OCR. /path/to/image.png"
+
+FROM deepseek-ocr2
+
+TEMPLATE """<｜begin▁of▁sentence｜><|User|>{{ if .Images }}<image>
+{{ end }}{{ .Prompt }}<|Assistant|>"""
+
+PARAMETER stop <｜end▁of▁sentence｜>
+PARAMETER stop <|User|>
+PARAMETER temperature 0
