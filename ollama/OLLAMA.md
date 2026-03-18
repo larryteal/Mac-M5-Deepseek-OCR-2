@@ -7,9 +7,9 @@ Running DeepSeek-OCR-2 natively on Ollama with the new engine, entirely on Metal
 ## Prerequisites
 
 - macOS with Apple Silicon (M1/M2/M3/M4/M5)
-- Go 1.24+ (tested with Go 1.24.3)
-- Ollama source at commit `bbbad97` (see below)
 - ~8 GB free memory
+- For pre-built binary: nothing else needed
+- For building from source: Go 1.24+ (tested with Go 1.24.3), Xcode Command Line Tools (`xcode-select --install`)
 
 ## Quick Start (Pre-built Binary + GGUF from Release)
 
@@ -117,26 +117,51 @@ If you prefer to apply manually, four files need one-line edits each:
 
 ### Step 4: Build
 
+Requires Xcode Command Line Tools (`xcode-select --install`) for CGO compilation.
+
 ```bash
 CGO_ENABLED=1 go build -o ollama-test .
 ```
 
-### Step 5: Create model and run
+### Step 5: Download GGUF model
 
-Use the GGUF from the Release, or convert from HuggingFace yourself:
+Download the Q8_0 GGUF from the [GitHub Release](https://github.com/larryteal/Mac-M5-Deepseek-OCR-2/releases/tag/v0.2.0-ollama) and merge:
 
 ```bash
-# Option A: Use GGUF from Release (recommended)
-# Download and merge parts as shown in Quick Start above, then:
+# Download all 5 parts (deepseek-ocr2-q8_0.gguf.part_aa through part_ae) to current dir, then:
+cat deepseek-ocr2-q8_0.gguf.part_a* > deepseek-ocr2-q8_0.gguf
+```
+
+> **Alternative**: Convert from HuggingFace yourself (advanced):
+> ```bash
+> huggingface-cli download deepseek-ai/DeepSeek-OCR-2
+> # Create Modelfile with FROM pointing to the HF snapshot directory
+> # Run: ./ollama-test create deepseek-ocr2 -f Modelfile --experimental
+> # Note: Q8_0 quantization requires MLX. Without -q flag, F16 is created (~12GB).
+> ```
+
+### Step 6: Create model and run OCR
+
+```bash
+# Create Modelfile (FROM must point to the GGUF file location)
+cat > Modelfile <<'EOF'
+FROM ./deepseek-ocr2-q8_0.gguf
+TEMPLATE """<｜begin▁of▁sentence｜><|User|>{{ if .Images }}<image>
+{{ end }}{{ .Prompt }}<|Assistant|>"""
+PARAMETER stop <｜end▁of▁sentence｜>
+PARAMETER stop <|User|>
+PARAMETER temperature 0
+EOF
+
+# Start server (both env vars are required)
 OLLAMA_NEW_ENGINE=1 GGML_METAL_TENSOR_DISABLE=1 ./ollama-test serve &
 sleep 3
+
+# Register model
 ./ollama-test create deepseek-ocr2 -f Modelfile
 
-# Option B: Convert from HuggingFace (requires local safetensors)
-# First download the model: huggingface-cli download deepseek-ai/DeepSeek-OCR-2
-# Then create Modelfile with: FROM /path/to/hf/snapshot
-# And run: ./ollama-test create deepseek-ocr2 -f Modelfile --experimental
-# Note: Q8_0 quantization requires MLX. Without -q flag, F16 is created (~12GB).
+# Run OCR
+./ollama-test run deepseek-ocr2 "Free OCR. /path/to/image.png"
 ```
 
 ## Environment Variables
