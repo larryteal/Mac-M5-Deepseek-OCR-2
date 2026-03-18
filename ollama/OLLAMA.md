@@ -175,23 +175,25 @@ ollama/
 
 ## Performance
 
-Tested on MacBook Pro M5 Pro 24GB:
+Tested on MacBook Pro M5 Pro 24GB, `OLLAMA_NEW_ENGINE=1`, `GGML_METAL_TENSOR_DISABLE=1`:
 
-| Metric | Value |
-|--------|-------|
-| Model size (Q8_0) | ~5.6 GB |
-| First inference (cold) | ~57s |
-| Subsequent inference (warm) | ~45s |
-| Memory usage | ~8 GB |
+| Metric | Cold Start | Warm (model loaded) |
+|--------|-----------|-------------------|
+| Total time | **4.31s** | **0.77s** |
+| Model loading | 1.20s | 0.05s |
+| Prompt eval (697 tokens) | 2.40s (291 tok/s) | 0.02s (cached) |
+| Text generation (109 tokens) | 0.59s (184 tok/s) | 0.60s (183 tok/s) |
+| Model size (Q8_0) | ~5.6 GB | |
+| Memory usage | ~8 GB | |
 
-> Note: The new engine (`OLLAMA_NEW_ENGINE=1`) is required. Performance will likely improve as the new engine matures.
+> Note: The new engine (`OLLAMA_NEW_ENGINE=1`) is required. `GGML_METAL_TENSOR_DISABLE=1` is currently needed to avoid Metal residency set issues with the new engine.
 
 ## Comparison with Other Solutions
 
 | Solution | Inference | Quality | Setup Complexity |
 |----------|-----------|---------|-----------------|
-| MLX bf16 | ~1s | Best | Low (pip install) |
-| PyTorch Hybrid | ~7s | Best | Medium (patching needed) |
-| **Ollama (this)** | **~45s** | **Good** | **High (build from source)** |
+| MLX bf16 | ~1.09s | Best (bf16) | Low (pip install) |
+| PyTorch Hybrid | ~7s | Best (fp32/fp16) | Medium (patching needed) |
+| **Ollama (this)** | **0.77s warm / 4.3s cold** | **Good (Q8_0)** | **High (build from source)** |
 
-Ollama's advantage is integration with the Ollama ecosystem (API, CLI, model management). For raw performance, MLX is significantly faster on Apple Silicon.
+Ollama warm inference is comparable to MLX. Cold start includes model loading (~1.2s) and first-time prompt encoding (~2.4s). The main advantage is integration with the Ollama ecosystem (API, CLI, model management, OpenAI-compatible endpoints).

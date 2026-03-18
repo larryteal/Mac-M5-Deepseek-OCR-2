@@ -34,7 +34,7 @@ The MLX solution runs **entirely on GPU** via Apple's native MLX framework, achi
 | PyTorch Hybrid (fp32) | 10.10s | CPU + MPS | 6x |
 | PyTorch Hybrid (fp16 LLM) | 6.94s | CPU + MPS | 9x |
 | **MLX bf16 (full GPU)** | **1.09s** | **Metal GPU** | **55x** |
-| Ollama (Q8_0, new engine) | ~45s | Metal GPU (ggml) | ~1.3x |
+| Ollama (Q8_0, new engine) | 4.31s cold / **0.77s** warm | Metal GPU (ggml) | 14x / 78x |
 
 ## Solution 1: MLX (Full GPU) - Recommended
 
@@ -190,7 +190,7 @@ Here's a timeline of what we tried, for anyone going down the same path:
 - Implement `deepseekocr2` as a new model architecture in Ollama's Go codebase
 - Convert HuggingFace safetensors → GGUF, run via Ollama's new engine
 - Overcame multiple issues: Metal crashes (cross-context tensors, inconsistent graph shapes), wrong RoPE type causing hallucinated output, hybrid attention mask orientation
-- **Result**: Correct output, **~45s** per image - slower than MLX but integrates with Ollama ecosystem
+- **Result**: Correct output, **4.3s cold / 0.77s warm** - comparable to MLX, integrates with Ollama ecosystem
 - See [`ollama/OLLAMA.md`](ollama/OLLAMA.md) for full implementation details and pitfalls
 
 ---
