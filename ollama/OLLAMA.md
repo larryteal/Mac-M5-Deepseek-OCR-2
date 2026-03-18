@@ -76,7 +76,7 @@ cp ${REPO}/convert/convert_deepseekocr2.go convert/
 
 ### Step 3: Apply patches to Ollama source
 
-Three files need one-line edits each:
+Four files need one-line edits each:
 
 **`model/models/models.go`** — register the model architecture (add one import line):
 ```diff
@@ -92,6 +92,14 @@ Three files need one-line edits each:
 + case "DeepseekOCR2ForCausalLM":
 +     conv = &deepseekocr2{}
   case "DeepseekV3ForCausalLM":
+```
+
+**`ml/backend/ggml/ggml.go`** — route Qwen2 vision tensors (`q.*`) to the output context instead of the layer context (prevents index-out-of-range panic):
+```diff
+- case strings.HasPrefix(t.Name, "v.") || strings.HasPrefix(t.Name, "mm.") || strings.HasPrefix(t.Name, "s."):
++ case strings.HasPrefix(t.Name, "v.") || strings.HasPrefix(t.Name, "mm.") || strings.HasPrefix(t.Name, "s.") || strings.HasPrefix(t.Name, "q."):
+      // TODO: assign vision tensors to the gpu if possible
+      createTensor(tensor{source: t}, output.bts, blocks)
 ```
 
 **`server/images.go`** — enable vision capability detection for CLI image support:
@@ -238,6 +246,14 @@ The mask layout in ggml is `[key, query]` (column-major), which is transposed co
 // MUST come before "model.norm" -> "output_norm"
 "model.qwen2_model.model.model.norm", "q.output_norm",
 ```
+
+### Pitfall 8: Qwen2 Tensor Routing Causes Panic on Load
+
+**Symptom**: `runtime error: index out of range [12] with length 12` when loading the model.
+
+**Root Cause**: Ollama's ggml backend routes tensors to GPU layers by extracting the first number from tensor names (e.g., `blk.5.attn_q` -> layer 5). Qwen2 tensors like `q.blk.12.attn_q` extract `12`, but the text model only has 12 blocks (index 0-11), causing an out-of-bounds access.
+
+**Fix**: Patch `ml/backend/ggml/ggml.go` to route `q.*` tensors (Qwen2 vision encoder) to the output context alongside other vision tensors (`v.*`, `mm.*`, `s.*`). See Step 3 in Build from Source above.
 
 ## Source Files
 
