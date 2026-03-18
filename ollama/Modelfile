@@ -1,16 +1,12 @@
 # Modelfile for DeepSeek-OCR-2 on Ollama
 #
-# Prerequisites:
-#   1. Build Ollama from source with deepseekocr2 model support (see OLLAMA.md)
-#   2. Convert model to GGUF: ollama create deepseek-ocr2 -q Q8_0 https://huggingface.co/deepseek-ai/DeepSeek-OCR-2
-#
-# Create model:
-#   ollama create deepseek-ocr2 -f Modelfile
-#
-# Usage:
-#   ollama run deepseek-ocr2 "Free OCR. /path/to/image.png"
+# Usage with pre-built GGUF (from GitHub Release):
+#   1. Download and merge GGUF parts: cat deepseek-ocr2-q8_0.gguf.part_a* > deepseek-ocr2-q8_0.gguf
+#   2. Start server: OLLAMA_NEW_ENGINE=1 GGML_METAL_TENSOR_DISABLE=1 ./ollama-test-darwin-arm64 serve
+#   3. Create model: ./ollama-test-darwin-arm64 create deepseek-ocr2 -f Modelfile
+#   4. Run OCR: ./ollama-test-darwin-arm64 run deepseek-ocr2 "Free OCR. /path/to/image.png"
 
-FROM deepseek-ocr2
+FROM ./deepseek-ocr2-q8_0.gguf
 
 TEMPLATE """<｜begin▁of▁sentence｜><|User|>{{ if .Images }}<image>
 {{ end }}{{ .Prompt }}<|Assistant|>"""
