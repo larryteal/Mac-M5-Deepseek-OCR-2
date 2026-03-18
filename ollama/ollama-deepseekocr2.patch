@@ -1,0 +1,51 @@
+diff --git a/convert/convert.go b/convert/convert.go
+index 2d27690..1dac50d 100644
+--- a/convert/convert.go
++++ b/convert/convert.go
+@@ -310,6 +310,8 @@ func LoadModelMetadata(fsys fs.FS) (ModelKV, *Tokenizer, error) {
+ 		conv = &gptossModel{}
+ 	case "DeepseekOCRForCausalLM":
+ 		conv = &deepseekocr{}
++	case "DeepseekOCR2ForCausalLM":
++		conv = &deepseekocr2{}
+ 	case "DeepseekV3ForCausalLM":
+ 		conv = &deepseek2Model{}
+ 	case "Glm4MoeLiteForCausalLM":
+diff --git a/ml/backend/ggml/ggml.go b/ml/backend/ggml/ggml.go
+index c2ce30d..11115e7 100644
+--- a/ml/backend/ggml/ggml.go
++++ b/ml/backend/ggml/ggml.go
+@@ -314,7 +314,7 @@ func New(modelPath string, params ml.BackendParams) (ml.Backend, error) {
+ 			"altup_proj", "altup_unembd_proj",
+ 			"per_layer_token_embd", "per_layer_model_proj", "per_layer_proj_norm"):
+ 			createTensor(tensor{source: t}, output.bts, blocks)
+-		case strings.HasPrefix(t.Name, "v.") || strings.HasPrefix(t.Name, "mm.") || strings.HasPrefix(t.Name, "s."):
++		case strings.HasPrefix(t.Name, "v.") || strings.HasPrefix(t.Name, "mm.") || strings.HasPrefix(t.Name, "s.") || strings.HasPrefix(t.Name, "q."):
+ 			// TODO: assign vision tensors to the gpu if possible
+ 			createTensor(tensor{source: t}, output.bts, blocks)
+ 		case contains(t.Name, "rope_freqs", "rope_factors_long", "rope_factors_short"):
+diff --git a/model/models/models.go b/model/models/models.go
+index 20d9c10..675ee38 100644
+--- a/model/models/models.go
++++ b/model/models/models.go
+@@ -4,6 +4,7 @@ import (
+ 	_ "github.com/ollama/ollama/model/models/bert"
+ 	_ "github.com/ollama/ollama/model/models/deepseek2"
+ 	_ "github.com/ollama/ollama/model/models/deepseekocr"
++	_ "github.com/ollama/ollama/model/models/deepseekocr2"
+ 	_ "github.com/ollama/ollama/model/models/gemma2"
+ 	_ "github.com/ollama/ollama/model/models/gemma3"
+ 	_ "github.com/ollama/ollama/model/models/gemma3n"
+diff --git a/server/images.go b/server/images.go
+index fad4e10..4f7a083 100644
+--- a/server/images.go
++++ b/server/images.go
+@@ -90,7 +90,7 @@ func (m *Model) Capabilities() []model.Capability {
+ 				// If no embedding is specified, we assume the model supports completion
+ 				capabilities = append(capabilities, model.CapabilityCompletion)
+ 			}
+-			if f.KeyValue("vision.block_count").Valid() {
++			if f.KeyValue("vision.block_count").Valid() || f.KeyValue("qwen2.block_count").Valid() {
+ 				capabilities = append(capabilities, model.CapabilityVision)
+ 			}
+ 		} else {

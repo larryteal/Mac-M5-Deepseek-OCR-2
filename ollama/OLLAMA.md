@@ -76,7 +76,13 @@ cp ${REPO}/convert/convert_deepseekocr2.go convert/
 
 ### Step 3: Apply patches to Ollama source
 
-Four files need one-line edits each:
+Apply all patches with one command:
+
+```bash
+git apply ${REPO}/ollama-deepseekocr2.patch
+```
+
+If you prefer to apply manually, four files need one-line edits each:
 
 **`model/models/models.go`** — register the model architecture (add one import line):
 ```diff
@@ -261,6 +267,7 @@ The mask layout in ggml is `[key, query]` (column-major), which is transposed co
 ollama/
 ├── OLLAMA.md                          # This file
 ├── Modelfile                          # Template for creating the model
+├── ollama-deepseekocr2.patch          # All Ollama source patches (git apply)
 ├── model/deepseekocr2/
 │   ├── model.go                       # Main model, EncodeMultimodal, Forward
 │   ├── model_qwen2.go                 # Qwen2 vision encoder (24 blocks)

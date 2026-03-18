@@ -214,6 +214,7 @@ Here's a timeline of what we tried, for anyone going down the same path:
 ├── ollama/
 │   ├── OLLAMA.md                 # Implementation guide and pitfalls
 │   ├── Modelfile                 # Ollama model template
+│   ├── ollama-deepseekocr2.patch # All Ollama source patches (git apply)
 │   ├── model/deepseekocr2/       # Ollama model implementation (Go)
 │   │   ├── model.go              # Main model, EncodeMultimodal, Forward
 │   │   ├── model_qwen2.go        # Qwen2 vision encoder
